@@ -1,0 +1,72 @@
+:root {
+  --color-bg: #ffffff;
+  --color-bg-subtle: #f7f7f8;
+  --color-border: #e3e3e6;
+  --color-text: #1a1a1e;
+  --color-text-muted: #6b6b72;
+  --color-accent: #3a5cf0;
+  --color-accent-contrast: #ffffff;
+  --color-danger: #d33b3b;
+  --color-danger-bg: #fdeeee;
+  --color-success: #1f9254;
+  --color-success-bg: #eaf7f0;
+  --radius: 10px;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif,
+    'Apple Color Emoji', 'Segoe UI Emoji';
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #17181c;
+    --color-bg-subtle: #1e1f24;
+    --color-border: #303138;
+    --color-text: #ececee;
+    --color-text-muted: #9b9ba3;
+    --color-accent: #7c93ff;
+    --color-accent-contrast: #10111a;
+    --color-danger: #ff6b6b;
+    --color-danger-bg: #3a1f22;
+    --color-success: #4fd68e;
+    --color-success-bg: #17301f;
+    color-scheme: dark;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+button {
+  font-family: inherit;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}

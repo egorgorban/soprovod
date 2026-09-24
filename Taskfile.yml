@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+
+version: "3"
+
+tasks:
+  up:
+    desc: service up
+    cmds:
+      - docker compose up --build -d
+    silent: true

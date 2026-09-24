@@ -1,0 +1,125 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.title {
+  font-size: 26px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.hint {
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
+.error {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  font-size: 14px;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+}
+
+.row {
+  display: block;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text);
+}
+
+.row:hover {
+  text-decoration: none;
+  opacity: 0.85;
+}
+
+.row:first-child {
+  padding-top: 0;
+}
+
+.rowTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.rowTitle {
+  font-weight: 550;
+  font-size: 15px;
+}
+
+.rowMeta {
+  color: var(--color-text-muted);
+  font-size: 13px;
+  margin-top: 2px;
+}
+
+.rowPreview {
+  margin-top: 6px;
+  font-size: 14px;
+  color: var(--color-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.badgeOk,
+.badgeNeutral,
+.badgeError {
+  font-size: 12px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.badgeOk {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+
+.badgeNeutral {
+  background: var(--color-bg-subtle);
+  color: var(--color-text-muted);
+}
+
+.badgeError {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+}
+
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding-top: 8px;
+}
+
+.pager button {
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 6px 12px;
+  color: var(--color-text);
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.pager button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.pagerInfo {
+  color: var(--color-text-muted);
+  font-size: 13px;
+}

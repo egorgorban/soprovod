@@ -1,0 +1,29 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.back {
+  align-self: flex-start;
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
+.back:hover {
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.hint {
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
+.error {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  font-size: 14px;
+}

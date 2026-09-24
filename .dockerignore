@@ -1,0 +1,11 @@
+.git
+.env
+.env.*
+!.env.example
+**/node_modules
+**/dist
+backend/soprovod
+*.log
+.DS_Store
+PLAN.md
+PythonDeveloper_GorbanEgor.md

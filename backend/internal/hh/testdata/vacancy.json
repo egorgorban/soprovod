@@ -1,0 +1,77 @@
+{
+  "id": "123456789",
+  "premium": false,
+  "name": "Backend-разработчик (Go)",
+  "department": null,
+  "has_test": false,
+  "response_letter_required": false,
+  "area": {
+    "id": "1",
+    "name": "Москва",
+    "url": "https://api.hh.ru/areas/1"
+  },
+  "salary": {
+    "from": 200000,
+    "to": 300000,
+    "currency": "RUR",
+    "gross": false
+  },
+  "type": {
+    "id": "open",
+    "name": "Открытая"
+  },
+  "address": null,
+  "allow_messages": true,
+  "experience": {
+    "id": "between3And6",
+    "name": "От 3 до 6 лет"
+  },
+  "schedule": {
+    "id": "remote",
+    "name": "Удаленная работа"
+  },
+  "employment": {
+    "id": "full",
+    "name": "Полная занятость"
+  },
+  "description": "<p><strong>О компании</strong></p><p>Мы разрабатываем платформу для автоматизации бизнес-процессов. Ищем опытного backend-разработчика в команду.</p><p><strong>Чем предстоит заниматься:</strong></p><ul><li>Разработка и поддержка микросервисов на Go</li><li>Проектирование REST и gRPC API</li><li>Работа с PostgreSQL и Kafka</li><li>Код-ревью и менторство junior-разработчиков</li></ul><p><strong>Наши ожидания:</strong></p><ul><li>Опыт коммерческой разработки на Go от 3 лет</li><li>Знание PostgreSQL, опыт оптимизации запросов</li><li>Опыт работы с очередями сообщений (Kafka/RabbitMQ)</li><li>Понимание принципов микросервисной архитектуры</li></ul><p>Будет плюсом опыт работы с Docker&nbsp;&amp;&nbsp;Kubernetes, а также участие в open-source проектах.</p><p><strong>Мы предлагаем:</strong></p><p>Конкурентную зарплату, удалённую работу, ДМС и оплачиваемое обучение.<br />Ждём ваше резюме!</p>",
+  "branded_description": null,
+  "key_skills": [
+    {"name": "Go"},
+    {"name": "PostgreSQL"},
+    {"name": "Kafka"},
+    {"name": "Docker"},
+    {"name": "REST API"}
+  ],
+  "accept_handicapped": false,
+  "accept_kids": false,
+  "employer": {
+    "id": "1234567",
+    "name": "ООО Технологии Будущего",
+    "url": "https://api.hh.ru/employers/1234567",
+    "alternate_url": "https://hh.ru/employer/1234567",
+    "logo_urls": null,
+    "vacancies_url": "https://api.hh.ru/vacancies?employer_id=1234567",
+    "trusted": true
+  },
+  "published_at": "2026-09-20T10:00:00+0300",
+  "created_at": "2026-09-20T10:00:00+0300",
+  "initial_created_at": "2026-09-18T10:00:00+0300",
+  "negotiations_url": null,
+  "suitable_resumes_url": null,
+  "apply_alternate_url": "https://hh.ru/applicant/vacancy_response?vacancyId=123456789",
+  "has_updates": false,
+  "show_logo_in_search": true,
+  "insider_interview": null,
+  "url": "https://api.hh.ru/vacancies/123456789?host=hh.ru",
+  "alternate_url": "https://hh.ru/vacancy/123456789",
+  "relations": [],
+  "employment_form": {
+    "id": "FULL",
+    "name": "Полная"
+  },
+  "internship": false,
+  "adv_response_url": null,
+  "is_adv_vacancy": false,
+  "adv_context": null
+}
