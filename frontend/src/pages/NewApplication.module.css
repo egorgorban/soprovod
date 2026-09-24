@@ -17,9 +17,85 @@
   font-size: 15px;
 }
 
+.segmented {
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 3px;
+  border-radius: var(--radius);
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border);
+  gap: 2px;
+}
+
+.segment {
+  border: none;
+  background: none;
+  padding: 7px 14px;
+  border-radius: calc(var(--radius) - 3px);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.segment:hover:not(:disabled) {
+  color: var(--color-text);
+}
+
+.segment:disabled {
+  cursor: default;
+}
+
+.segmentActive {
+  background: var(--color-bg);
+  color: var(--color-text);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
 .form {
   display: flex;
+  flex-direction: column;
   gap: 10px;
+}
+
+.form > .input {
+  width: 100%;
+}
+
+.row {
+  display: flex;
+  gap: 10px;
+}
+
+.row > .input {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 560px) {
+  .row {
+    flex-direction: column;
+  }
+}
+
+.textarea {
+  width: 100%;
+  resize: none;
+  overflow: hidden;
+  min-height: 176px;
+  padding: 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: var(--color-accent);
 }
 
 .input {

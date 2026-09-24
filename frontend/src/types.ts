@@ -1,7 +1,10 @@
+export type VacancySource = 'hh' | 'manual'
+
 export interface Vacancy {
   id: number
-  hh_id: string
-  url: string
+  source: VacancySource
+  hh_id: string | null
+  url: string | null
   title: string
   company: string
   salary: string | null

@@ -87,9 +87,13 @@ export default function LetterCard({ application, vacancy, onSaved }: Props) {
     <div className={styles.card}>
       <div className={styles.vacancyHeader}>
         <h2 className={styles.vacancyTitle}>
-          <a href={vacancy.url} target="_blank" rel="noreferrer">
-            {vacancy.title}
-          </a>
+          {vacancy.url ? (
+            <a href={vacancy.url} target="_blank" rel="noreferrer">
+              {vacancy.title}
+            </a>
+          ) : (
+            vacancy.title || 'Без названия'
+          )}
         </h2>
         <div className={styles.vacancyMeta}>
           <span>{vacancy.company}</span>

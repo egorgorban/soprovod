@@ -35,18 +35,20 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>
 }
 
+export type CreateApplicationInput = { url: string } | { text: string; title?: string; company?: string }
+
 export interface Api {
-  createApplication(url: string): Promise<ApplicationWithVacancy>
+  createApplication(input: CreateApplicationInput): Promise<ApplicationWithVacancy>
   listApplications(limit: number, offset: number): Promise<ListApplicationsResponse>
   getApplication(id: number): Promise<ApplicationWithVacancy>
   updateApplication(id: number, editedText: string): Promise<{ application: Application }>
 }
 
 const realApi: Api = {
-  createApplication(url) {
+  createApplication(input) {
     return request<ApplicationWithVacancy>('/api/applications', {
       method: 'POST',
-      body: JSON.stringify({ url }),
+      body: JSON.stringify(input),
     })
   },
   listApplications(limit, offset) {
@@ -73,12 +75,32 @@ function delay(ms: number) {
 let mockAutoId = 1000
 const mockStore = new Map<number, ApplicationWithVacancy>()
 
-function makeMockVacancy(url: string): Vacancy {
+function firstLine(text: string, maxLen = 120): string {
+  const line = text.split('\n').map((l) => l.trim()).find((l) => l !== '') ?? ''
+  return line.length > maxLen ? line.slice(0, maxLen) : line
+}
+
+function makeMockVacancy(input: CreateApplicationInput): Vacancy {
   const id = mockAutoId++
+  if ('text' in input) {
+    return {
+      id,
+      source: 'manual',
+      hh_id: null,
+      url: null,
+      title: input.title?.trim() || firstLine(input.text),
+      company: input.company?.trim() ?? '',
+      salary: null,
+      description: input.text.trim(),
+      key_skills: [],
+      created_at: new Date().toISOString(),
+    }
+  }
   return {
     id,
+    source: 'hh',
     hh_id: String(1000000 + id),
-    url,
+    url: input.url,
     title: 'Backend-разработчик (Go)',
     company: 'ООО «Ромашка»',
     salary: 'от 250 000 до 350 000 ₽ на руки',
@@ -127,9 +149,9 @@ function makeMockApplication(vacancyId: number): Application {
 }
 
 const mockApi: Api = {
-  async createApplication(url) {
+  async createApplication(input) {
     await delay(2500)
-    const vacancy = makeMockVacancy(url)
+    const vacancy = makeMockVacancy(input)
     const application = makeMockApplication(vacancy.id)
     mockStore.set(application.id, { application, vacancy })
     return { application, vacancy }
