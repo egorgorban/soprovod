@@ -7,12 +7,14 @@ import (
 	"github.com/egorgorban/soprovod/backend/internal/storage"
 )
 
-// vacancyDTO mirrors frontend/src/types.ts Vacancy: salary is nullable,
+// vacancyDTO mirrors frontend/src/types.ts Vacancy: salary, hh_id and url are
+// nullable (hh_id/url are absent for manually entered vacancies),
 // key_skills is never null.
 type vacancyDTO struct {
 	ID          int64     `json:"id"`
-	HHID        string    `json:"hh_id"`
-	URL         string    `json:"url"`
+	Source      string    `json:"source"`
+	HHID        *string   `json:"hh_id"`
+	URL         *string   `json:"url"`
 	Title       string    `json:"title"`
 	Company     string    `json:"company"`
 	Salary      *string   `json:"salary"`
@@ -28,8 +30,9 @@ func newVacancyDTO(v storage.Vacancy) vacancyDTO {
 	}
 	return vacancyDTO{
 		ID:          v.ID,
-		HHID:        v.HHID,
-		URL:         v.URL,
+		Source:      v.Source,
+		HHID:        strPtrOrNil(v.HHID),
+		URL:         strPtrOrNil(v.URL),
 		Title:       v.Title,
 		Company:     v.Company,
 		Salary:      strPtrOrNil(v.Salary),

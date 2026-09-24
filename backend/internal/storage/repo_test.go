@@ -165,6 +165,67 @@ func TestApplicationLifecycle(t *testing.T) {
 	}
 }
 
+func TestInsertManualVacancy(t *testing.T) {
+	repo := setupRepo(t)
+	ctx := context.Background()
+
+	v, err := repo.InsertManualVacancy(ctx, storage.InsertManualVacancyParams{
+		Title:       "Go Developer (manual)",
+		Company:     "Gamma",
+		Description: "текст вакансии вставленный вручную",
+	})
+	if err != nil {
+		t.Fatalf("insert manual vacancy: %v", err)
+	}
+	if v.ID == 0 {
+		t.Fatal("expected non-zero id")
+	}
+	if v.Source != storage.VacancySourceManual {
+		t.Errorf("source = %q, want %q", v.Source, storage.VacancySourceManual)
+	}
+	if v.HHID != "" {
+		t.Errorf("hh_id = %q, want empty", v.HHID)
+	}
+	if v.URL != "" {
+		t.Errorf("url = %q, want empty", v.URL)
+	}
+
+	// Inserting again should create a new row, not dedupe.
+	v2, err := repo.InsertManualVacancy(ctx, storage.InsertManualVacancyParams{
+		Title:       "Go Developer (manual)",
+		Company:     "Gamma",
+		Description: "текст вакансии вставленный вручную",
+	})
+	if err != nil {
+		t.Fatalf("second insert manual vacancy: %v", err)
+	}
+	if v2.ID == v.ID {
+		t.Error("expected a new row on second insert, not a dedupe")
+	}
+
+	app, err := repo.CreateApplication(ctx, storage.CreateApplicationParams{
+		VacancyID:     v.ID,
+		FilterPassed:  true,
+		FilterReason:  "mock",
+		Status:        storage.StatusGenerated,
+		GeneratedText: "hello",
+	})
+	if err != nil {
+		t.Fatalf("create application: %v", err)
+	}
+
+	got, err := repo.GetApplication(ctx, app.ID)
+	if err != nil {
+		t.Fatalf("get application: %v", err)
+	}
+	if got.Vacancy.Source != storage.VacancySourceManual {
+		t.Errorf("source = %q, want manual", got.Vacancy.Source)
+	}
+	if got.Vacancy.URL != "" || got.Vacancy.HHID != "" {
+		t.Errorf("expected empty hh_id/url, got hh_id=%q url=%q", got.Vacancy.HHID, got.Vacancy.URL)
+	}
+}
+
 func TestGetApplicationNotFound(t *testing.T) {
 	repo := setupRepo(t)
 	_, err := repo.GetApplication(context.Background(), 9_999_999)

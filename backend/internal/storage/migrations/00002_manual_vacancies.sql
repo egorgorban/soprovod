@@ -1,0 +1,9 @@
+-- +goose Up
+ALTER TABLE vacancies ADD COLUMN source text NOT NULL DEFAULT 'hh';
+ALTER TABLE vacancies ALTER COLUMN hh_id DROP NOT NULL;
+ALTER TABLE vacancies ALTER COLUMN url DROP NOT NULL;
+
+-- +goose Down
+ALTER TABLE vacancies ALTER COLUMN url SET NOT NULL;
+ALTER TABLE vacancies ALTER COLUMN hh_id SET NOT NULL;
+ALTER TABLE vacancies DROP COLUMN source;

@@ -6,6 +6,8 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"strings"
+	"unicode/utf8"
 
 	"github.com/go-chi/chi/v5"
 
@@ -17,11 +19,14 @@ import (
 const (
 	defaultListLimit = 20
 	maxListLimit     = 100
+	// maxManualTextRunes bounds the size of a manually pasted vacancy text.
+	maxManualTextRunes = 50_000
 )
 
 // Pipeline is the subset of pipeline.Service the HTTP layer needs.
 type Pipeline interface {
 	Process(ctx context.Context, rawURL string) (storage.ApplicationWithVacancy, error)
+	ProcessText(ctx context.Context, mv pipeline.ManualVacancy) (storage.ApplicationWithVacancy, error)
 }
 
 // ApplicationRepo is the subset of storage.Repo the HTTP layer needs, beyond
@@ -34,28 +39,56 @@ type ApplicationRepo interface {
 }
 
 type createApplicationRequest struct {
-	URL string `json:"url"`
+	URL     string `json:"url"`
+	Text    string `json:"text"`
+	Title   string `json:"title"`
+	Company string `json:"company"`
 }
 
+// handleCreateApplication accepts either {url} (fetch from hh.ru) or
+// {text, title?, company?} (manually pasted vacancy). Exactly one of url/text
+// must be set.
 func handleCreateApplication(pl Pipeline) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req createApplicationRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			writeError(w, http.StatusBadRequest, "invalid request body")
-			return
-		}
-		if req.URL == "" {
-			writeError(w, http.StatusBadRequest, "url is required")
+			writeError(w, http.StatusBadRequest, "некорректное тело запроса")
 			return
 		}
 
-		res, err := pl.Process(r.Context(), req.URL)
-		if err != nil {
-			writeProcessError(w, err)
-			return
-		}
+		hasURL := strings.TrimSpace(req.URL) != ""
+		hasText := strings.TrimSpace(req.Text) != ""
 
-		writeJSON(w, http.StatusCreated, newApplicationWithVacancyDTO(res))
+		switch {
+		case hasURL && hasText:
+			writeError(w, http.StatusBadRequest, "укажите либо ссылку, либо текст вакансии, не оба сразу")
+			return
+		case !hasURL && !hasText:
+			writeError(w, http.StatusBadRequest, "укажите ссылку на вакансию или её текст")
+			return
+		case hasText:
+			if utf8.RuneCountInString(req.Text) > maxManualTextRunes {
+				writeError(w, http.StatusBadRequest, "текст вакансии слишком длинный (максимум 50000 символов)")
+				return
+			}
+			res, err := pl.ProcessText(r.Context(), pipeline.ManualVacancy{
+				Text:    req.Text,
+				Title:   req.Title,
+				Company: req.Company,
+			})
+			if err != nil {
+				writeProcessError(w, err)
+				return
+			}
+			writeJSON(w, http.StatusCreated, newApplicationWithVacancyDTO(res))
+		default:
+			res, err := pl.Process(r.Context(), req.URL)
+			if err != nil {
+				writeProcessError(w, err)
+				return
+			}
+			writeJSON(w, http.StatusCreated, newApplicationWithVacancyDTO(res))
+		}
 	}
 }
 

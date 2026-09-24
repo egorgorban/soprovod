@@ -9,9 +9,18 @@ import (
 // ErrNotFound is returned by Repo methods when the requested row does not exist.
 var ErrNotFound = errors.New("storage: not found")
 
-// Vacancy mirrors the vacancies table.
+// Vacancy source values.
+const (
+	VacancySourceHH     = "hh"
+	VacancySourceManual = "manual"
+)
+
+// Vacancy mirrors the vacancies table. HHID and URL are empty strings when
+// absent (manual vacancies), mirroring the SQL NULL -> "" convention used
+// elsewhere in this package (see nullIfEmpty).
 type Vacancy struct {
 	ID          int64           `json:"id"`
+	Source      string          `json:"source"`
 	HHID        string          `json:"hh_id"`
 	URL         string          `json:"url"`
 	Title       string          `json:"title"`

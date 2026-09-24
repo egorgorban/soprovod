@@ -9,12 +9,18 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
+	"unicode/utf8"
 
 	"github.com/egorgorban/soprovod/backend/internal/filter"
 	"github.com/egorgorban/soprovod/backend/internal/hh"
 	"github.com/egorgorban/soprovod/backend/internal/letter"
 	"github.com/egorgorban/soprovod/backend/internal/storage"
 )
+
+// maxManualTitleRunes bounds the fallback title derived from the first
+// non-empty line of a manually pasted vacancy text.
+const maxManualTitleRunes = 120
 
 // ErrInvalidURL is returned when the given string does not contain a
 // recognizable hh.ru vacancy id. Maps to HTTP 400.
@@ -36,7 +42,16 @@ type VacancyFetcher interface {
 // Repo is the subset of storage.Repo the pipeline needs.
 type Repo interface {
 	UpsertVacancy(ctx context.Context, p storage.UpsertVacancyParams) (storage.Vacancy, error)
+	InsertManualVacancy(ctx context.Context, p storage.InsertManualVacancyParams) (storage.Vacancy, error)
 	CreateApplication(ctx context.Context, p storage.CreateApplicationParams) (storage.Application, error)
+}
+
+// ManualVacancy is the input for ProcessText: a vacancy pasted by hand
+// instead of fetched from hh.ru.
+type ManualVacancy struct {
+	Text    string
+	Title   string
+	Company string
 }
 
 // Service runs the vacancy -> letter pipeline.
@@ -97,6 +112,53 @@ func (s *Service) Process(ctx context.Context, rawURL string) (storage.Applicati
 		return storage.ApplicationWithVacancy{}, fmt.Errorf("%w: save vacancy: %v", ErrUpstream, err)
 	}
 
+	return s.filterGenerateSave(ctx, vacancy)
+}
+
+// ProcessText runs the filter -> generate -> save tail of the pipeline for a
+// manually pasted vacancy, skipping the hh.ru fetch step. Title falls back
+// to the first non-empty line of the text (capped at maxManualTitleRunes
+// runes) when mv.Title is empty; the description is the trimmed text as-is.
+func (s *Service) ProcessText(ctx context.Context, mv ManualVacancy) (storage.ApplicationWithVacancy, error) {
+	description := strings.TrimSpace(mv.Text)
+	title := strings.TrimSpace(mv.Title)
+	if title == "" {
+		title = fallbackTitle(description)
+	}
+
+	vacancy, err := s.Repo.InsertManualVacancy(ctx, storage.InsertManualVacancyParams{
+		Title:       title,
+		Company:     strings.TrimSpace(mv.Company),
+		Description: description,
+	})
+	if err != nil {
+		return storage.ApplicationWithVacancy{}, fmt.Errorf("%w: save vacancy: %v", ErrUpstream, err)
+	}
+
+	return s.filterGenerateSave(ctx, vacancy)
+}
+
+// fallbackTitle returns the first non-empty line of text, truncated to
+// maxManualTitleRunes runes.
+func fallbackTitle(text string) string {
+	for _, line := range strings.Split(text, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		if utf8.RuneCountInString(line) <= maxManualTitleRunes {
+			return line
+		}
+		runes := []rune(line)
+		return string(runes[:maxManualTitleRunes])
+	}
+	return ""
+}
+
+// filterGenerateSave runs the shared tail of both Process and ProcessText:
+// filter -> (if passed) generate letter -> persist the resulting
+// application row.
+func (s *Service) filterGenerateSave(ctx context.Context, vacancy storage.Vacancy) (storage.ApplicationWithVacancy, error) {
 	filterResult, err := s.Filter.Check(ctx, filter.Input{
 		Title:       vacancy.Title,
 		Company:     vacancy.Company,

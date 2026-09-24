@@ -74,6 +74,20 @@ func (r *fakeRepo) UpsertVacancy(_ context.Context, p storage.UpsertVacancyParam
 	return r.vacancy, nil
 }
 
+func (r *fakeRepo) InsertManualVacancy(_ context.Context, p storage.InsertManualVacancyParams) (storage.Vacancy, error) {
+	if r.upsertErr != nil {
+		return storage.Vacancy{}, r.upsertErr
+	}
+	r.vacancy = storage.Vacancy{
+		ID:          1,
+		Source:      storage.VacancySourceManual,
+		Title:       p.Title,
+		Company:     p.Company,
+		Description: p.Description,
+	}
+	return r.vacancy, nil
+}
+
 func (r *fakeRepo) CreateApplication(_ context.Context, p storage.CreateApplicationParams) (storage.Application, error) {
 	if r.createErr != nil {
 		return storage.Application{}, r.createErr
@@ -204,5 +218,75 @@ func TestProcess_FetchUpstreamError(t *testing.T) {
 	_, err := svc.Process(context.Background(), "https://hh.ru/vacancy/999")
 	if !errors.Is(err, pipeline.ErrUpstream) {
 		t.Fatalf("err = %v, want ErrUpstream", err)
+	}
+}
+
+func TestProcessText_TitleFallback(t *testing.T) {
+	repo := &fakeRepo{}
+	svc := pipeline.NewService(
+		&fakeFetcher{},
+		&fakeFilter{result: filter.Result{Pass: true, Reason: "mock"}},
+		&fakeGenerator{result: &letter.Result{Output: letter.Output{Letter: "hello"}, Model: "gpt-5-nano"}},
+		repo,
+		nil,
+	)
+
+	res, err := svc.ProcessText(context.Background(), pipeline.ManualVacancy{
+		Text: "\n  Go-разработчик в команду платформы  \nОстальной текст вакансии...",
+	})
+	if err != nil {
+		t.Fatalf("ProcessText: %v", err)
+	}
+	if res.Vacancy.Title != "Go-разработчик в команду платформы" {
+		t.Errorf("title = %q", res.Vacancy.Title)
+	}
+	if res.Vacancy.Source != storage.VacancySourceManual {
+		t.Errorf("source = %q, want manual", res.Vacancy.Source)
+	}
+}
+
+func TestProcessText_TitleFallbackTruncated(t *testing.T) {
+	repo := &fakeRepo{}
+	svc := pipeline.NewService(&fakeFetcher{}, &fakeFilter{result: filter.Result{Pass: true}}, &fakeGenerator{result: &letter.Result{}}, repo, nil)
+
+	longLine := ""
+	for i := 0; i < 200; i++ {
+		longLine += "a"
+	}
+	res, err := svc.ProcessText(context.Background(), pipeline.ManualVacancy{Text: longLine})
+	if err != nil {
+		t.Fatalf("ProcessText: %v", err)
+	}
+	if got := len([]rune(res.Vacancy.Title)); got != 120 {
+		t.Errorf("title length = %d, want 120", got)
+	}
+}
+
+func TestProcessText_ExplicitTitle(t *testing.T) {
+	repo := &fakeRepo{}
+	svc := pipeline.NewService(&fakeFetcher{}, &fakeFilter{result: filter.Result{Pass: true}}, &fakeGenerator{result: &letter.Result{}}, repo, nil)
+
+	res, err := svc.ProcessText(context.Background(), pipeline.ManualVacancy{
+		Text:  "some vacancy text",
+		Title: "Custom title",
+	})
+	if err != nil {
+		t.Fatalf("ProcessText: %v", err)
+	}
+	if res.Vacancy.Title != "Custom title" {
+		t.Errorf("title = %q, want %q", res.Vacancy.Title, "Custom title")
+	}
+}
+
+func TestProcessText_SharedTail_FilteredOut(t *testing.T) {
+	repo := &fakeRepo{}
+	svc := pipeline.NewService(&fakeFetcher{}, &fakeFilter{result: filter.Result{Pass: false, Reason: "no"}}, &fakeGenerator{}, repo, nil)
+
+	res, err := svc.ProcessText(context.Background(), pipeline.ManualVacancy{Text: "text"})
+	if err != nil {
+		t.Fatalf("ProcessText: %v", err)
+	}
+	if res.Application.Status != storage.StatusFilteredOut {
+		t.Errorf("status = %q, want filtered_out", res.Application.Status)
 	}
 }

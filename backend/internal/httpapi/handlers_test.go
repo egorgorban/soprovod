@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/egorgorban/soprovod/backend/internal/httpapi"
@@ -16,11 +17,19 @@ import (
 // fakePipeline
 
 type fakePipeline struct {
-	result storage.ApplicationWithVacancy
-	err    error
+	result     storage.ApplicationWithVacancy
+	err        error
+	lastText   pipeline.ManualVacancy
+	textCalled bool
 }
 
 func (f *fakePipeline) Process(_ context.Context, _ string) (storage.ApplicationWithVacancy, error) {
+	return f.result, f.err
+}
+
+func (f *fakePipeline) ProcessText(_ context.Context, mv pipeline.ManualVacancy) (storage.ApplicationWithVacancy, error) {
+	f.textCalled = true
+	f.lastText = mv
 	return f.result, f.err
 }
 
@@ -271,6 +280,66 @@ func TestHandleUpdateApplication_NotFound(t *testing.T) {
 
 	if w.Code != http.StatusNotFound {
 		t.Fatalf("status = %d, want 404", w.Code)
+	}
+}
+
+func TestHandleCreateApplication_TextMode(t *testing.T) {
+	pl := &fakePipeline{result: sampleApplicationWithVacancy()}
+	r := newTestRouter(pl, &fakeRepo{})
+
+	body, _ := json.Marshal(map[string]string{"text": "Ищем Go-разработчика", "title": "Go dev", "company": "Acme"})
+	req := httptest.NewRequest(http.MethodPost, "/api/applications", bytes.NewReader(body))
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusCreated {
+		t.Fatalf("status = %d, body = %s", w.Code, w.Body.String())
+	}
+	if !pl.textCalled {
+		t.Fatal("expected ProcessText to be called")
+	}
+	if pl.lastText.Text != "Ищем Go-разработчика" || pl.lastText.Title != "Go dev" || pl.lastText.Company != "Acme" {
+		t.Errorf("lastText = %+v", pl.lastText)
+	}
+}
+
+func TestHandleCreateApplication_BothURLAndText(t *testing.T) {
+	r := newTestRouter(&fakePipeline{}, &fakeRepo{})
+
+	body, _ := json.Marshal(map[string]string{"url": "https://hh.ru/vacancy/1", "text": "text"})
+	req := httptest.NewRequest(http.MethodPost, "/api/applications", bytes.NewReader(body))
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want 400, body = %s", w.Code, w.Body.String())
+	}
+}
+
+func TestHandleCreateApplication_EmptyText(t *testing.T) {
+	r := newTestRouter(&fakePipeline{}, &fakeRepo{})
+
+	body, _ := json.Marshal(map[string]string{"text": "   "})
+	req := httptest.NewRequest(http.MethodPost, "/api/applications", bytes.NewReader(body))
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want 400", w.Code)
+	}
+}
+
+func TestHandleCreateApplication_TextTooLong(t *testing.T) {
+	r := newTestRouter(&fakePipeline{}, &fakeRepo{})
+
+	longText := strings.Repeat("a", 50_001)
+	body, _ := json.Marshal(map[string]string{"text": longText})
+	req := httptest.NewRequest(http.MethodPost, "/api/applications", bytes.NewReader(body))
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want 400", w.Code)
 	}
 }
 

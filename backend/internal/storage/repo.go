@@ -47,8 +47,8 @@ type UpsertVacancyParams struct {
 // exists, updates its mutable fields, returning the resulting row.
 func (r *Repo) UpsertVacancy(ctx context.Context, p UpsertVacancyParams) (Vacancy, error) {
 	const q = `
-INSERT INTO vacancies (hh_id, url, title, company, salary, description, key_skills, raw)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+INSERT INTO vacancies (hh_id, url, title, company, salary, description, key_skills, raw, source)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'hh')
 ON CONFLICT (hh_id) DO UPDATE SET
 	url = EXCLUDED.url,
 	title = EXCLUDED.title,
@@ -57,13 +57,39 @@ ON CONFLICT (hh_id) DO UPDATE SET
 	description = EXCLUDED.description,
 	key_skills = EXCLUDED.key_skills,
 	raw = EXCLUDED.raw
-RETURNING id, hh_id, url, title, company, salary, description, key_skills, raw, created_at`
+RETURNING id, coalesce(hh_id, ''), coalesce(url, ''), title, company, salary, description, key_skills, raw, created_at, source`
 
 	var v Vacancy
 	err := r.pool.QueryRow(ctx, q, p.HHID, p.URL, p.Title, p.Company, p.Salary, p.Description, p.KeySkills, string(p.Raw)).
-		Scan(&v.ID, &v.HHID, &v.URL, &v.Title, &v.Company, &v.Salary, &v.Description, &v.KeySkills, &v.Raw, &v.CreatedAt)
+		Scan(&v.ID, &v.HHID, &v.URL, &v.Title, &v.Company, &v.Salary, &v.Description, &v.KeySkills, &v.Raw, &v.CreatedAt, &v.Source)
 	if err != nil {
 		return Vacancy{}, fmt.Errorf("storage: upsert vacancy: %w", err)
+	}
+	return v, nil
+}
+
+// InsertManualVacancyParams carries the fields needed to insert a manually
+// entered vacancy (source = "manual"). Manual vacancies are never deduped:
+// every submission creates a new row, unlike UpsertVacancy's hh_id upsert.
+type InsertManualVacancyParams struct {
+	Title       string
+	Company     string
+	Description string
+}
+
+// InsertManualVacancy inserts a new vacancy with source = "manual" and no
+// hh_id/url, returning the resulting row.
+func (r *Repo) InsertManualVacancy(ctx context.Context, p InsertManualVacancyParams) (Vacancy, error) {
+	const q = `
+INSERT INTO vacancies (hh_id, url, title, company, description, raw, source)
+VALUES (NULL, NULL, $1, $2, $3, '{}', 'manual')
+RETURNING id, coalesce(hh_id, ''), coalesce(url, ''), title, company, coalesce(salary, ''), description, key_skills, raw, created_at, source`
+
+	var v Vacancy
+	err := r.pool.QueryRow(ctx, q, p.Title, p.Company, p.Description).
+		Scan(&v.ID, &v.HHID, &v.URL, &v.Title, &v.Company, &v.Salary, &v.Description, &v.KeySkills, &v.Raw, &v.CreatedAt, &v.Source)
+	if err != nil {
+		return Vacancy{}, fmt.Errorf("storage: insert manual vacancy: %w", err)
 	}
 	return v, nil
 }
@@ -147,7 +173,7 @@ func (r *Repo) GetApplication(ctx context.Context, id int64) (ApplicationWithVac
 SELECT
 	a.id, a.vacancy_id, a.filter_passed, coalesce(a.filter_reason, ''), a.status, coalesce(a.generated_text, ''),
 	coalesce(a.edited_text, ''), a.llm_output, coalesce(a.model, ''), coalesce(a.error, ''), a.created_at, a.updated_at,
-	v.id, v.hh_id, v.url, v.title, v.company, v.salary, v.description, v.key_skills, v.raw, v.created_at
+	v.id, coalesce(v.hh_id, ''), coalesce(v.url, ''), v.title, v.company, coalesce(v.salary, ''), v.description, v.key_skills, v.raw, v.created_at, v.source
 FROM applications a
 JOIN vacancies v ON v.id = a.vacancy_id
 WHERE a.id = $1`
@@ -158,7 +184,7 @@ WHERE a.id = $1`
 		&res.Application.Status, &res.Application.GeneratedText, &res.Application.EditedText, &res.Application.LLMOutput,
 		&res.Application.Model, &res.Application.Error, &res.Application.CreatedAt, &res.Application.UpdatedAt,
 		&res.Vacancy.ID, &res.Vacancy.HHID, &res.Vacancy.URL, &res.Vacancy.Title, &res.Vacancy.Company,
-		&res.Vacancy.Salary, &res.Vacancy.Description, &res.Vacancy.KeySkills, &res.Vacancy.Raw, &res.Vacancy.CreatedAt,
+		&res.Vacancy.Salary, &res.Vacancy.Description, &res.Vacancy.KeySkills, &res.Vacancy.Raw, &res.Vacancy.CreatedAt, &res.Vacancy.Source,
 	)
 	if err != nil {
 		if err == pgx.ErrNoRows {
