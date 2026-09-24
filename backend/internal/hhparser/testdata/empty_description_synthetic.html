@@ -1,0 +1,26 @@
+<!doctype html>
+<!-- Hand-written synthetic fixture: a vacancy page whose description is
+     empty in both JSON-LD and DOM, used to exercise the ErrParse path.
+     There is no realistic way to fetch a real hh.ru page with an empty
+     description, so this is synthetic. -->
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <title data-rh="true">Вакансия Пустая вакансия в компании ООО Ромашка — hh.ru</title>
+    <link rel="canonical" href="https://hh.ru/vacancy/999999999" />
+    <script type="application/ld+json">
+      {
+        "@context": "http://schema.org",
+        "@type": "JobPosting",
+        "title": "Пустая вакансия",
+        "description": "",
+        "hiringOrganization": { "@type": "Organization", "name": "ООО Ромашка" }
+      }
+    </script>
+  </head>
+  <body>
+    <h1 data-qa="vacancy-title">Пустая вакансия</h1>
+    <span data-qa="vacancy-company-name">ООО Ромашка</span>
+    <div data-qa="vacancy-description"></div>
+  </body>
+</html>

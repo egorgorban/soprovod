@@ -76,7 +76,11 @@ func (s *Service) Process(ctx context.Context, rawURL string) (storage.Applicati
 		if errors.Is(err, hh.ErrNotFound) {
 			return storage.ApplicationWithVacancy{}, ErrVacancyNotFound
 		}
-		return storage.ApplicationWithVacancy{}, fmt.Errorf("%w: fetch vacancy: %v", ErrUpstream, err)
+		// Wrap the underlying error with %w (not %v) here, unlike the other
+		// ErrUpstream wraps below: callers need errors.Is to see through to
+		// fetcher-specific sentinels like hhparser.ErrBlocked/ErrParse so
+		// the HTTP layer can map them to a more specific response.
+		return storage.ApplicationWithVacancy{}, fmt.Errorf("%w: fetch vacancy: %w", ErrUpstream, err)
 	}
 
 	vacancy, err := s.Repo.UpsertVacancy(ctx, storage.UpsertVacancyParams{

@@ -145,7 +145,7 @@ func (c *Client) GetVacancy(ctx context.Context, id string) (*Vacancy, error) {
 		Title:       v.Name,
 		Company:     company,
 		Salary:      formatSalary(salary),
-		Description: htmlToText(v.Description),
+		Description: HTMLToText(v.Description),
 		KeySkills:   skills,
 		Raw:         json.RawMessage(raw),
 	}, nil

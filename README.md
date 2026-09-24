@@ -91,6 +91,16 @@ export OPENAI_API_KEY=...
 go run ./cmd/try ./cmd/try/testdata/go_backend_vacancy.txt
 ```
 
+## Источник вакансии (`HH_SOURCE`)
+
+По умолчанию (`HH_SOURCE=html`, либо не задано) вакансия забирается скрейпингом страницы
+`hh.ru/vacancy/{id}` (`internal/hhparser`) — API `api.hh.ru` требует токен для ряда полей и
+часто недоступен без авторизации. Если hh.ru отдаёт капчу или блокирует запрос, пайплайн
+возвращает `502` с сообщением про капчу. Установить `HH_SOURCE=api`, чтобы вместо этого
+использовать публичный JSON API (`internal/hh`). Ручная проверка скрейпера:
+`go run ./cmd/fetch <url-или-id>` (печатает распарсенную вакансию), либо
+`go run ./cmd/fetch -save out.html <url-или-id>` (сохраняет сырой HTML для фикстур).
+
 ## Резюме и шаблон письма
 
 Лежат в `resume/resume.md` и `resume/template.md` (пути настраиваются через
@@ -106,6 +116,7 @@ backend/
   cmd/try/          ручной скрипт для проверки генерации письма
   internal/config/  чтение конфигурации из env
   internal/hh/      парсинг URL вакансии, клиент api.hh.ru, HTML → plain text
+  internal/hhparser/ альтернативный источник вакансии: скрейпинг HTML-страницы hh.ru/vacancy/{id}
   internal/filter/  интерфейс Filter, MockFilter
   internal/letter/  интерфейс Generator, OpenAIGenerator, промпт
   internal/pipeline/ Service.Process — fetch → filter → generate → save

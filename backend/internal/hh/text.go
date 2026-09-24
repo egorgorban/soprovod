@@ -7,12 +7,12 @@ import (
 	"golang.org/x/net/html/atom"
 )
 
-// htmlToText converts hh.ru vacancy description HTML (typically <p>, <ul>,
+// HTMLToText converts hh.ru vacancy description HTML (typically <p>, <ul>,
 // <li>, <strong>, <em>, <br>, and plain text) into readable plain text.
 // Paragraphs are separated by a blank line and list items are rendered as
 // "- item" lines. Whitespace is collapsed and HTML entities are decoded by
 // the underlying tokenizer.
-func htmlToText(s string) string {
+func HTMLToText(s string) string {
 	if strings.TrimSpace(s) == "" {
 		return ""
 	}
@@ -36,8 +36,8 @@ func htmlToText(s string) string {
 }
 
 // walk renders node n (and its children) into b. inList indicates whether
-// we are currently inside a <ul>/<ol> so that <li> can be prefixed with
-// "- ".
+// we are currently inside a <li>: block elements there (hh often wraps item
+// text in <p>) are rendered inline so the item stays on one "- " line.
 func walk(n *html.Node, b *strings.Builder, inList bool) {
 	switch n.Type {
 	case html.TextNode:
@@ -45,9 +45,21 @@ func walk(n *html.Node, b *strings.Builder, inList bool) {
 	case html.ElementNode:
 		switch n.DataAtom {
 		case atom.Br:
-			b.WriteString("\n")
+			if inList {
+				b.WriteString(" ")
+			} else {
+				b.WriteString("\n")
+			}
 			return
 		case atom.P, atom.Div:
+			if inList {
+				b.WriteString(" ")
+				for c := n.FirstChild; c != nil; c = c.NextSibling {
+					walk(c, b, inList)
+				}
+				b.WriteString(" ")
+				return
+			}
 			ensureBlankLineBefore(b)
 			for c := n.FirstChild; c != nil; c = c.NextSibling {
 				walk(c, b, inList)
@@ -58,7 +70,7 @@ func walk(n *html.Node, b *strings.Builder, inList bool) {
 		case atom.Ul, atom.Ol:
 			ensureBlankLineBefore(b)
 			for c := n.FirstChild; c != nil; c = c.NextSibling {
-				walk(c, b, true)
+				walk(c, b, false)
 			}
 			b.WriteString("\n")
 			return
@@ -66,7 +78,7 @@ func walk(n *html.Node, b *strings.Builder, inList bool) {
 			ensureNewlineBefore(b)
 			b.WriteString("- ")
 			for c := n.FirstChild; c != nil; c = c.NextSibling {
-				walk(c, b, inList)
+				walk(c, b, true)
 			}
 			ensureNewlineBefore(b)
 			return
@@ -126,6 +138,17 @@ func finalize(s string) string {
 		}
 		out = append(out, trimmed)
 	}
+	// Drop blank lines between consecutive list items (hh sometimes wraps
+	// every item in its own <ul>).
+	compact := out[:0]
+	for i, l := range out {
+		if l == "" && i > 0 && i+1 < len(out) &&
+			strings.HasPrefix(out[i-1], "- ") && strings.HasPrefix(out[i+1], "- ") {
+			continue
+		}
+		compact = append(compact, l)
+	}
+	out = compact
 	// Trim leading/trailing blank lines.
 	for len(out) > 0 && out[0] == "" {
 		out = out[1:]

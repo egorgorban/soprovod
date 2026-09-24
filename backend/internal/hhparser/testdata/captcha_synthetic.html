@@ -1,0 +1,21 @@
+<!doctype html>
+<!-- Hand-written synthetic fixture: hh.ru / Yandex SmartCaptcha anti-bot
+     page. No real captcha page could be fetched for this task (outbound
+     network access was blocked), so this approximates the known markers
+     hh.ru's anti-bot page uses: a distinctive <title>, a captcha container,
+     and a form posting to /captcha-check. -->
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <title>Подтвердите, что запрос сделан человеком, а не роботом</title>
+  </head>
+  <body>
+    <div class="captcha-container">
+      <form id="checkbox-captcha-form" action="/captcha-check" method="post">
+        <div id="smartcaptcha"></div>
+        <input type="hidden" name="retpath" value="/vacancy/123456789" />
+        <button type="submit">Я не робот</button>
+      </form>
+    </div>
+  </body>
+</html>

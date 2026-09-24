@@ -12,6 +12,7 @@ type Config struct {
 	ResumePath   string
 	TemplatePath string
 	StaticDir    string
+	HHSource     string
 }
 
 // Load reads configuration from the environment, applying defaults where
@@ -26,6 +27,7 @@ func Load() Config {
 		ResumePath:   getEnv("RESUME_PATH", "resume/resume.md"),
 		TemplatePath: getEnv("TEMPLATE_PATH", "resume/template.md"),
 		StaticDir:    getEnv("STATIC_DIR", "frontend/dist"),
+		HHSource:     getEnv("HH_SOURCE", "html"),
 	}
 }
 

@@ -1,0 +1,46 @@
+<!doctype html>
+<!-- Hand-written synthetic fixture: none of the real fixtures we could
+     capture (vacancy_real1/2/3.html) happen to have salary disclosed, so
+     this small synthetic page exercises the salary extraction path
+     (JSON-LD baseSalary + DOM data-qa="vacancy-salary-compensation-type-...")
+     specifically. -->
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <title data-rh="true">Вакансия Backend-разработчик (Go) в ООО Технологии Будущего — hh.ru</title>
+    <link rel="canonical" href="https://hh.ru/vacancy/555000111" />
+    <script type="application/ld+json">
+      {
+        "@context": "http://schema.org",
+        "@type": "JobPosting",
+        "title": "Backend-разработчик (Go)",
+        "description": "<p>Разработка микросервисов на Go.</p><ul><li>Go</li><li>PostgreSQL</li></ul>",
+        "hiringOrganization": { "@type": "Organization", "name": "ООО Технологии Будущего" },
+        "baseSalary": {
+          "@type": "MonetaryAmount",
+          "currency": "RUR",
+          "value": {
+            "@type": "QuantitativeValue",
+            "minValue": "200000",
+            "maxValue": "300000",
+            "unitText": "MONTH"
+          }
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <h1 data-qa="vacancy-title">Backend-разработчик (Go)</h1>
+    <span data-qa="vacancy-company-name">ООО Технологии Будущего</span>
+    <div data-qa="vacancy-salary-compensation-type-net">от 200 000 до 300 000 ₽ на руки</div>
+    <div data-qa="vacancy-description">
+      <p>Разработка микросервисов на Go.</p>
+      <ul>
+        <li>Go</li>
+        <li>PostgreSQL</li>
+      </ul>
+    </div>
+    <div data-qa="skills-element">Go</div>
+    <div data-qa="skills-element">PostgreSQL</div>
+  </body>
+</html>

@@ -16,6 +16,7 @@ import (
 	"github.com/egorgorban/soprovod/backend/internal/config"
 	"github.com/egorgorban/soprovod/backend/internal/filter"
 	"github.com/egorgorban/soprovod/backend/internal/hh"
+	"github.com/egorgorban/soprovod/backend/internal/hhparser"
 	"github.com/egorgorban/soprovod/backend/internal/httpapi"
 	"github.com/egorgorban/soprovod/backend/internal/letter"
 	"github.com/egorgorban/soprovod/backend/internal/pipeline"
@@ -63,10 +64,17 @@ func run(logger *slog.Logger) error {
 		return fmt.Errorf("read template file %q: %w", cfg.TemplatePath, err)
 	}
 
-	hhClient := hh.NewClient(nil, "", "")
+	var fetcher pipeline.VacancyFetcher
+	switch cfg.HHSource {
+	case "api":
+		fetcher = hh.NewClient(nil, "", "")
+	default:
+		fetcher = hhparser.NewClient(nil, "")
+	}
+	logger.Info("hh vacancy source configured", "source", cfg.HHSource)
 	mockFilter := filter.MockFilter{}
 	generator := letter.NewOpenAIGenerator(cfg.OpenAIAPIKey, cfg.OpenAIModel, string(resume), string(template))
-	pl := pipeline.NewService(hhClient, mockFilter, generator, repo, logger)
+	pl := pipeline.NewService(fetcher, mockFilter, generator, repo, logger)
 
 	handler := httpapi.NewRouter(httpapi.Deps{
 		Logger:    logger,

@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/egorgorban/soprovod/backend/internal/hhparser"
 	"github.com/egorgorban/soprovod/backend/internal/pipeline"
 	"github.com/egorgorban/soprovod/backend/internal/storage"
 )
@@ -64,6 +65,8 @@ func writeProcessError(w http.ResponseWriter, err error) {
 		writeError(w, http.StatusBadRequest, "invalid vacancy url")
 	case errors.Is(err, pipeline.ErrVacancyNotFound):
 		writeError(w, http.StatusNotFound, "vacancy not found")
+	case errors.Is(err, hhparser.ErrBlocked):
+		writeError(w, http.StatusBadGateway, "hh.ru заблокировал запрос (капча), попробуйте позже")
 	case errors.Is(err, pipeline.ErrUpstream):
 		writeError(w, http.StatusBadGateway, "upstream service unavailable")
 	default:

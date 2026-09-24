@@ -1,0 +1,25 @@
+<!doctype html>
+<!-- Hand-written synthetic fixture: a vacancy page with no JSON-LD
+     JobPosting block at all, forcing the parser to rely purely on the DOM
+     data-qa attributes. All three real fixtures we captured include
+     JSON-LD, so this case is exercised synthetically. -->
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <title data-rh="true">Вакансия Frontend-разработчик в ООО Вебстудия — hh.ru</title>
+    <link rel="canonical" href="https://hh.ru/vacancy/444000222" />
+  </head>
+  <body>
+    <h1 data-qa="vacancy-title">Frontend-разработчик</h1>
+    <span data-qa="vacancy-company-name">ООО Вебстудия</span>
+    <div data-qa="vacancy-description">
+      <p>Верстка и интеграция интерфейсов на React.</p>
+      <ul>
+        <li>React</li>
+        <li>TypeScript</li>
+      </ul>
+    </div>
+    <div data-qa="skills-element">React</div>
+    <div data-qa="skills-element">TypeScript</div>
+  </body>
+</html>
