@@ -16,9 +16,11 @@ function formatSalary(salary: string | null): string | null {
 function AutoTextarea({
   value,
   onChange,
+  onSave,
 }: {
   value: string
   onChange: (v: string) => void
+  onSave: () => void
 }) {
   const ref = useRef<HTMLTextAreaElement>(null)
 
@@ -35,6 +37,12 @@ function AutoTextarea({
       className={styles.textarea}
       value={value}
       onChange={(e) => onChange(e.target.value)}
+      onKeyDown={(e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+          e.preventDefault()
+          onSave()
+        }
+      }}
       spellCheck
     />
   )
@@ -54,6 +62,16 @@ export default function LetterCard({ application, vacancy, onSaved }: Props) {
   }, [application.id, application.edited_text, application.generated_text])
 
   const dirty = text !== (application.edited_text ?? application.generated_text ?? '')
+  const edited =
+    application.edited_text != null && application.edited_text !== (application.generated_text ?? '')
+
+  // Warn before leaving the page with unsaved edits.
+  useEffect(() => {
+    if (!dirty) return
+    const onBeforeUnload = (e: BeforeUnloadEvent) => e.preventDefault()
+    window.addEventListener('beforeunload', onBeforeUnload)
+    return () => window.removeEventListener('beforeunload', onBeforeUnload)
+  }, [dirty])
 
   async function handleCopy() {
     try {
@@ -66,6 +84,7 @@ export default function LetterCard({ application, vacancy, onSaved }: Props) {
   }
 
   async function handleSave() {
+    if (!dirty || saveState === 'saving') return
     setSaveState('saving')
     setSaveError(null)
     try {
@@ -120,7 +139,7 @@ export default function LetterCard({ application, vacancy, onSaved }: Props) {
 
       {(application.status === 'generated' || text) && (
         <>
-          <AutoTextarea value={text} onChange={setText} />
+          <AutoTextarea value={text} onChange={setText} onSave={handleSave} />
 
           <div className={styles.actions}>
             <button type="button" className={styles.primaryBtn} onClick={handleCopy}>
@@ -128,13 +147,28 @@ export default function LetterCard({ application, vacancy, onSaved }: Props) {
             </button>
             <button
               type="button"
-              className={styles.secondaryBtn}
+              className={dirty ? styles.primaryBtn : styles.secondaryBtn}
               onClick={handleSave}
               disabled={!dirty || saveState === 'saving'}
             >
               {saveState === 'saving' ? 'Сохранение…' : saveState === 'saved' ? 'Сохранено' : 'Сохранить'}
             </button>
             {saveState === 'error' && <span className={styles.saveError}>{saveError}</span>}
+            {saveState !== 'error' && dirty && (
+              <span className={styles.saveHint}>Есть несохранённые изменения · ⌘/Ctrl+S</span>
+            )}
+            {!dirty && edited && saveState === 'idle' && (
+              <span className={styles.saveHint}>
+                Отредактированная версия ·{' '}
+                <button
+                  type="button"
+                  className={styles.linkBtn}
+                  onClick={() => setText(application.generated_text ?? '')}
+                >
+                  вернуть исходную
+                </button>
+              </span>
+            )}
           </div>
 
           {(experience.length > 0 || stack.length > 0) && (
